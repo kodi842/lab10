@@ -49,46 +49,7 @@ void printGraph(int** matrix, int n) {
     }
 }
 
-// BFS для взвешенного графа
-void weightedBFS(int** G, int v, int size) {
-    queue<int> Q;
-    int* DIST = (int*)malloc(size * sizeof(int));
-    for (int i = 0; i < size; i++) {
-        DIST[i] = INT_MAX;
-    }
-
-    Q.push(v);
-    DIST[v] = 0;
-
-    while (!Q.empty()) {
-        int curr = Q.front();
-        Q.pop();
-
-        for (int i = 0; i < size; i++) {
-            if (G[curr][i] > 0 && G[curr][i] != INT_MAX) {
-                int new_dist = DIST[curr] + G[curr][i];
-                if (new_dist < DIST[i]) {
-                    DIST[i] = new_dist;
-                    Q.push(i);
-                }
-            }
-        }
-    }
-
-    printf("Расстояния от вершины %d:\n", v);
-    for (int i = 0; i < size; i++) {
-        if (DIST[i] == INT_MAX) {
-            printf("Вершина %d: недостижима\n", i);
-        }
-        else {
-            printf("Вершина %d: %d\n", i, DIST[i]);
-        }
-    }
-
-    free(DIST);
-}
-
-// Алгоритм Флойда–Уоршелла
+// Функция для алгоритма Флойда-Уоршелла
 void floydWarshall(int** graph, int size, int** dist) {
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
@@ -116,19 +77,22 @@ void floydWarshall(int** graph, int size, int** dist) {
 }
 
 void analyzeGraph(int** dist, int size) {
+    int* distan = (int*)malloc(size * sizeof(int));
     int* eccentricity = (int*)malloc(size * sizeof(int));
     int radius = INT_MAX;
     int diameter = 0;
 
     for (int i = 0; i < size; i++) {
+        distan[i] = 0;
         eccentricity[i] = 0;
         for (int j = 0; j < size; j++) {
             if (dist[i][j] != INT_MAX) {
+                distan[i] = max(distan[i], dist[i][j]);
                 eccentricity[i] = max(eccentricity[i], dist[i][j]);
             }
         }
-        radius = min(radius, eccentricity[i]);
-        diameter = max(diameter, eccentricity[i]);
+        radius = min(radius, distan[i]);
+        diameter = max(diameter, distan[i]);
     }
 
     printf("Радиус графа: %d\n", radius);
@@ -136,7 +100,7 @@ void analyzeGraph(int** dist, int size) {
 
     printf("Центральные вершины: ");
     for (int i = 0; i < size; i++) {
-        if (eccentricity[i] == radius) {
+        if (distan[i] == radius) {
             printf("%d ", i);
         }
     }
@@ -144,13 +108,35 @@ void analyzeGraph(int** dist, int size) {
 
     printf("Периферийные вершины: ");
     for (int i = 0; i < size; i++) {
-        if (eccentricity[i] == diameter) {
+        if (distan[i] == diameter) {
             printf("%d ", i);
         }
     }
     printf("\n");
 
+    printf("Эксцентричности :;
+    for (int i = 0; i < size; i++) {
+        printf("Вершина %d: %d\n", i, eccentricity[i]);
+    }
+    printf("\n");
+
+    free(distan);
     free(eccentricity);
+}
+
+void printDistances(int** dist, int size) {
+    printf("Матрица расстояний:\n");
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (dist[i][j] == INT_MAX) {
+                printf("INF ");
+            }
+            else {
+                printf("%3d ", dist[i][j]);
+            }
+        }
+        printf("\n");
+    }
 }
 
 int main() {
@@ -174,17 +160,6 @@ int main() {
     int** graph = createGraph(n, directed);
     printGraph(graph, n);
 
-    printf("Введите начальную вершину для обхода (от 0 до %d): ", n - 1);
-    int start_node;
-    if (scanf("%d", &start_node) != 1 || start_node < 0 || start_node >= n) {
-        printf("Ошибка: неверная начальная вершина.\n");
-        for (int i = 0; i < n; i++) free(graph[i]);
-        free(graph);
-        return 1;
-    }
-
-    weightedBFS(graph, start_node, n);
-
     int** dist = (int**)malloc(n * sizeof(int*));
     for (int i = 0; i < n; i++) {
         dist[i] = (int*)malloc(n * sizeof(int));
@@ -192,6 +167,7 @@ int main() {
 
     floydWarshall(graph, n, dist);
     analyzeGraph(dist, n);
+    printDistances(dist, n);
 
     for (int i = 0; i < n; i++) {
         free(graph[i]);
